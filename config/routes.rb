@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  resources :games, only: [:index, :create]
+  resources :games, only: [ :index, :create ]
   # get "games/index"
   # get "games/create"
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
@@ -15,4 +15,6 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
 
+  get games_path
+  post games_path, params: { game: { name: "Test" } }
 end
