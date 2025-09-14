@@ -1,0 +1,219 @@
+<div id="app">
+  <div class="game-area mx-auto relative" @mousemove="updateCursor">
+
+    <!-- タイトル画面 -->
+    <div
+      v-if="!gameStarted && !gameEnded"
+      class="absolute inset-0 flex flex-col items-center justify-center text-center text-white z-10"
+      style="
+        background-image: url('<%= asset_path("autumn.png") %>');
+        background-size: cover;
+        background-position: center;
+      "
+    >
+      <h1 class="text-3xl font-bold mb-2">落ち葉シューティング</h1>
+      <p class="mb-4">上から落ちてくる落ち葉をクリックしてポイントを稼ごう！</p>
+      <button
+        class="bg-blue-500 text-white px-6 py-3 rounded text-lg"
+        @click="startGame"
+      >
+        ゲームスタート
+      </button>
+    </div>
+
+    <!-- 落ち葉 -->
+    <div
+      v-for="leaf in leaves"
+      :key="leaf.id"
+      class="leaf absolute cursor-pointer"
+      :style="{
+        left: leaf.x + 'px',
+        top: leaf.y + 'px',
+        transform: 'rotate(' + leaf.rotation + 'deg)'
+      }"
+      @click="shootLeaf(leaf.id, leaf.x, leaf.y)"
+    >
+      <img src="<%= asset_path('leaf.png') %>" alt="紅葉" class="w-6 h-6 rounded-full">
+    </div>
+
+    <!-- ポップアニメーション -->
+    <div
+      v-for="pop in pops"
+      :key="pop.id"
+      class="absolute text-lg font-bold text-yellow-400 pointer-events-none"
+      :style="{
+        left: pop.x + 'px',
+        top: pop.y + 'px',
+        opacity: pop.opacity,
+        transform: 'translate(-50%,-50%) scale(' + pop.scale + ')'
+      }"
+    >
+      +10
+    </div>
+
+    <!-- HUD -->
+    <div class="absolute top-2 left-2 bg-white bg-opacity-80 p-2 rounded">
+      <div>スコア: {{ score }}</div>
+      <div>残り時間: {{ timeLeft }}秒</div>
+    </div>
+
+    <!-- クロスヘア -->
+    <div
+      v-if="gameStarted"
+      class="crosshair pointer-events-none absolute w-8 h-8 border-2 border-yellow-500 rounded-full"
+      :style="{ left: cursorX - 16 + 'px', top: cursorY - 16 + 'px' }"
+    ></div>
+
+    <!-- ゲーム終了画面 -->
+    <div
+      v-if="gameEnded"
+      class="absolute inset-0 flex flex-col items-center justify-center text-center text-white z-20"
+      style="
+        background-image: url('<%= asset_path("autumn.png") %>');
+        background-size: cover;
+        background-position: center;
+      "
+    >
+      <h2 class="text-4xl font-bold mb-4">ゲーム終了！</h2>
+      <p class="text-3xl mb-4">最終スコア: {{ score }}点</p>
+      <button
+        class="bg-green-500 text-white px-6 py-3 rounded text-lg"
+        @click="startGame"
+      >
+        もう一回
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.game-area {
+  width: 90vw;
+  max-width: 1200px;
+  height: 60vh;
+  max-height: 800px;
+  border: 2px solid #333;
+  overflow: hidden;
+  position: relative;
+
+  background-image: url('<%= asset_path("autumn.png") %>');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.leaf {
+  user-select: none;
+}
+
+.crosshair {
+  pointer-events: none;
+}
+</style>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      score: 0,
+      timeLeft: 30,
+      gameStarted: false,
+      gameEnded: false,
+      leaves: [],
+      pops: [],
+      leafIdCounter: 0,
+      popIdCounter: 0,
+      gameTimer: null,
+      leafGenerator: null,
+      animationFrame: null,
+      cursorX: 0,
+      cursorY: 0
+    }
+  },
+  methods: {
+    startGame() {
+      this.gameStarted = true;
+      this.gameEnded = false;
+      this.score = 0;
+      this.timeLeft = 30;
+      this.leaves = [];
+      this.pops = [];
+      this.leafIdCounter = 0;
+      this.popIdCounter = 0;
+
+      this.gameTimer = setInterval(() => {
+        this.timeLeft--;
+        if (this.timeLeft <= 0) this.endGame();
+      }, 1000);
+
+      this.leafGenerator = setInterval(() => {
+        this.leaves.push({
+          id: this.leafIdCounter++,
+          x: Math.random() * (this.$el.clientWidth - 30),
+          y: -30,
+          speed: Math.random() * 2 + 1,
+          rotation: Math.random() * 360
+        });
+      }, 800);
+
+      this.animate();
+    },
+
+    animate() {
+      const step = () => {
+        if (!this.gameStarted) return;
+
+        this.leaves.forEach((leaf, index) => {
+          leaf.y += leaf.speed;
+          leaf.rotation += 2;
+          if (leaf.y > this.$el.clientHeight) this.leaves.splice(index, 1);
+        });
+
+        this.pops = this.pops.filter(pop => {
+          pop.y -= 0.5;
+          pop.scale += 0.02;
+          pop.opacity -= 0.05;
+          return pop.opacity > 0;
+        });
+
+        this.animationFrame = requestAnimationFrame(step);
+      };
+      step();
+    },
+
+    shootLeaf(id, x, y) {
+      const index = this.leaves.findIndex(l => l.id === id);
+      if (index !== -1) {
+        this.leaves.splice(index, 1);
+        this.score += 10;
+
+        this.pops.push({
+          id: this.popIdCounter++,
+          x: x + 15,
+          y: y + 15,
+          scale: 1,
+          opacity: 1
+        });
+      }
+    },
+
+    updateCursor(event) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      this.cursorX = event.clientX - rect.left;
+      this.cursorY = event.clientY - rect.top;
+    },
+
+    endGame() {
+      this.gameStarted = false;
+      this.gameEnded = true;
+      clearInterval(this.gameTimer);
+      clearInterval(this.leafGenerator);
+      cancelAnimationFrame(this.animationFrame);
+    }
+  }
+}).mount('#app');
+</script>
