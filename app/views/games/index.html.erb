@@ -1,0 +1,268 @@
+<div id="app">
+  <div class="text-center mt-4"></div>
+  <div class="game-area mx-auto relative" @mousemove="updateCursor">
+
+    <!-- タイトル画面 -->
+    <div
+      v-if="!gameStarted"
+      class="absolute inset-0 flex flex-col items-center justify-center text-center text-white z-10 p-4 rounded"
+      style="
+        background-image: url('<%= asset_path("autumn.png") %>');
+        background-size: cover;
+        background-position: center;
+      "
+    >
+      <h1 class="text-5xl font-extrabold mb-6 tracking-wide animate-bounce">
+        🍁 落ち葉シューティング 🍁
+      </h1>
+      <p class="text-2xl mb-6 font-semibold">
+        上から落ちてくる落ち葉をクリックしてポイントを稼ごう！
+      </p>
+      <button
+        class="bg-gradient-to-r from-orange-500 to-red-600 text-white px-10 py-4 rounded-2xl text-2xl shadow-lg hover:scale-110 transform transition"
+        @click="startGame"
+      >
+        ゲームスタート
+      </button>
+    </div>
+
+    <!-- 落ち葉 -->
+    <div
+      v-for="leaf in leaves"
+      :key="leaf.id"
+      class="leaf absolute cursor-pointer"
+      :style="{
+        left: leaf.x + 'px',
+        top: leaf.y + 'px',
+        transform: 'rotate(' + leaf.rotation + 'deg)'
+      }"
+      @click="shootLeaf(leaf.id, leaf.x, leaf.y)"
+    >
+      <img src="<%= asset_path('leaf.png') %>" alt="紅葉" style="width:45px; height:45px; border-radius:50%">
+    </div>
+
+    <!-- ポップアニメーション -->
+    <div
+      v-for="pop in pops"
+      :key="pop.id"
+      class="absolute text-lg font-bold text-yellow-400 pointer-events-none"
+      :style="{
+        left: pop.x + 'px',
+        top: pop.y + 'px',
+        opacity: pop.opacity,
+        transform: 'translate(-50%,-50%) scale(' + pop.scale + ')'
+      }"
+    >
+      +10
+    </div>
+
+    <!-- HUD -->
+    <div class="absolute top-2 left-2 bg-white bg-opacity-80 p-2 rounded">
+      <div>スコア: {{ score }}</div>
+      <div>残り時間: {{ timeLeft }}秒</div>
+    </div>
+
+    <!-- クロスヘア -->
+    <div
+      v-if="gameStarted"
+      class="crosshair pointer-events-none absolute w-8 h-8 border-2 border-yellow-500 rounded-full"
+      :style="{ left: cursorX - 16 + 'px', top: cursorY - 16 + 'px' }"
+    ></div>
+
+    <!-- ゲーム終了画面 -->
+    <div
+      v-if="gameEnded"
+      class="absolute inset-0 flex flex-col items-center justify-center text-center text-white z-20"
+      style="
+        background-image: url('<%= asset_path("autumn.png") %>');
+        background-size: cover;
+        background-position: center;
+      "
+    >
+      <div class="p-8 rounded text-center text-white">
+        <h2 class="text-5xl font-extrabold mb-6 tracking-wide animate-pulse drop-shadow-lg">
+          🎉 ゲーム終了！ 🎉
+        </h2>
+        <p class="text-3xl md:text-4xl mb-6 font-bold drop-shadow-md">
+           最終スコア: <span class="text-yellow-300">{{ score }}</span> 点
+        </p>
+        <button
+          class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-12 py-4 rounded-2xl text-2xl shadow-xl hover:scale-110 transform transition"
+          @click="startGame"
+        >
+          もう一回!
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <style>
+  .game-area {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    overflow: hidden;
+    background: url('<%= asset_path("autumn.png") %>') center/cover no-repeat;
+    box-sizing: border-box;
+    z-index: 0;
+  }
+
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  #app {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  .leaf {
+    user-select: none;
+  }
+
+  .crosshair {
+    pointer-events: none;
+  }
+  </style>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script>
+  const { createApp } = Vue;
+
+  createApp({
+    data() {
+      return {
+        score: 0,
+        timeLeft: 30,
+        gameStarted: false,
+        gameEnded: false,
+        leaves: [],
+        pops: [],
+        leafIdCounter: 0,
+        popIdCounter: 0,
+        gameTimer: null,
+        leafGenerator: null,
+        animationFrame: null,
+        cursorX: 0,
+        cursorY: 0
+      };
+    },
+    methods: {
+      startGame() {
+        // 初期化
+        this.gameStarted = true;
+        this.gameEnded = false;
+        this.score = 0;
+        this.timeLeft = 30;
+        this.leaves = [];
+        this.pops = [];
+        this.leafIdCounter = 0;
+        this.popIdCounter = 0;
+
+        // タイマー（既にあればクリア）
+        if (this.gameTimer) clearInterval(this.gameTimer);
+        this.gameTimer = setInterval(() => {
+          this.timeLeft--;
+          if (this.timeLeft <= 0) this.endGame();
+        }, 1000);
+
+        // 既存の生成器をクリア
+        if (this.leafGenerator) { clearInterval(this.leafGenerator); this.leafGenerator = null; }
+        if (this.animationFrame) { cancelAnimationFrame(this.animationFrame); this.animationFrame = null; }
+
+        // 落ち葉生成（毎回 game-area の幅を参照）
+        const leafSize = 45; // <img> の表示サイズに合わせる
+        this.leafGenerator = setInterval(() => {
+          // game-area を確実に取得
+          const area = document.querySelector('.game-area');
+          const width = area && area.clientWidth ? area.clientWidth : window.innerWidth;
+          const x = Math.random() * Math.max(0, width - leafSize);
+
+          this.leaves.push({
+            id: this.leafIdCounter++,
+            x: x,
+            y: -leafSize,
+            speed: Math.random() * 2 + 1,
+            rotation: Math.random() * 360,
+            size: leafSize
+          });
+        }, 800);
+
+        // アニメーション開始
+        this._animateLoop();
+      },
+
+      // RAF ループを分離して管理
+      _animateLoop() {
+        const step = () => {
+          if (!this.gameStarted) return;
+
+          const area = document.querySelector('.game-area');
+          const height = area && area.clientHeight ? area.clientHeight : window.innerHeight;
+
+          // 落ち葉移動（後方ループで安全に削除）
+          for (let i = this.leaves.length - 1; i >= 0; i--) {
+            const leaf = this.leaves[i];
+            leaf.y += leaf.speed;
+            leaf.rotation += 2;
+            if (leaf.y > height + 50) {
+              this.leaves.splice(i, 1);
+            }
+          }
+
+          // pops 更新
+          for (let i = this.pops.length - 1; i >= 0; i--) {
+            const pop = this.pops[i];
+            pop.y -= 0.5;
+            pop.scale += 0.02;
+            pop.opacity -= 0.05;
+            if (pop.opacity <= 0) this.pops.splice(i, 1);
+          }
+
+          this.animationFrame = requestAnimationFrame(step);
+        };
+
+        if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
+        this.animationFrame = requestAnimationFrame(step);
+      },
+
+      shootLeaf(id, x, y) {
+        const index = this.leaves.findIndex(l => l.id === id);
+        if (index !== -1) {
+          this.leaves.splice(index, 1);
+          this.score += 10;
+
+          // ポップアニメーション追加
+          this.pops.push({
+            id: this.popIdCounter++,
+            x: x + 15,
+            y: y + 15,
+            scale: 1,
+            opacity: 1
+          });
+        }
+      },
+
+      updateCursor(event) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        this.cursorX = event.clientX - rect.left;
+        this.cursorY = event.clientY - rect.top;
+      },
+
+      endGame() {
+        this.gameStarted = false;
+        this.gameEnded = true;
+        if (this.gameTimer) { clearInterval(this.gameTimer); this.gameTimer = null; }
+        if (this.leafGenerator) { clearInterval(this.leafGenerator); this.leafGenerator = null; }
+        if (this.animationFrame) { cancelAnimationFrame(this.animationFrame); this.animationFrame = null; }
+      }
+    }
+  }).mount('#app');
+  </script>
