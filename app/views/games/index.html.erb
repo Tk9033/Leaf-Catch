@@ -12,10 +12,14 @@
         background-position: center;
       "
     >
-      <h1 class="text-2xl font-bold">落ち葉シューティング</h1>
-      <p class="mb-2">上から落ちてくる落ち葉をクリックしてポイントを稼ごう！</p>
+      <h1 class="text-5xl font-extrabold mb-6 tracking-wide animate-bounce">
+        🍁 落ち葉シューティング 🍁
+      </h1>
+      <p class="text-2xl mb-6 font-semibold">
+        上から落ちてくる落ち葉をクリックしてポイントを稼ごう！
+      </p>
       <button
-        class="bg-blue-500 text-white px-6 py-3 rounded text-lg"
+        class="bg-gradient-to-r from-orange-500 to-red-600 text-white px-10 py-4 rounded-2xl text-2xl shadow-lg hover:scale-110 transform transition"
         @click="startGame"
       >
         ゲームスタート
@@ -75,14 +79,18 @@
         background-position: center;
       "
     >
-      <div class="p-6 rounded">
-        <h2 class="text-4xl font-bold mb-4">ゲーム終了！</h2>
-        <p class="text-3xl mb-4">最終スコア: {{ score }}点</p>
+      <div class="p-8 rounded text-center text-white">
+        <h2 class="text-5xl font-extrabold mb-6 tracking-wide animate-pulse drop-shadow-lg">
+          🎉 ゲーム終了！ 🎉
+        </h2>
+        <p class="text-3xl md:text-4xl mb-6 font-bold drop-shadow-md">
+           最終スコア: <span class="text-yellow-300">{{ score }}</span> 点
+        </p>
         <button
-          class="bg-green-500 text-white px-6 py-3 rounded text-lg"
+          class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-12 py-4 rounded-2xl text-2xl shadow-xl hover:scale-110 transform transition"
           @click="startGame"
         >
-          もう一回
+          もう一回!
         </button>
       </div>
     </div>
