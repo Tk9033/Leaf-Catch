@@ -6,6 +6,6 @@ import "@hotwired/turbo-rails"
 import "controllers"
 import GameApp from "./games"
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("turbo:load", () => {
   createApp(GameApp).mount('#app')
 })
