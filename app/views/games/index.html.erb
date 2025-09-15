@@ -13,10 +13,10 @@
       "
     >
       <h1 class="text-5xl font-extrabold mb-6 tracking-wide animate-bounce">
-        🍁 落ち葉シューティング 🍁
+        🍁 Leaf Catch 🍁
       </h1>
       <p class="text-2xl mb-6 font-semibold">
-        上から落ちてくる落ち葉をクリックしてポイントを稼ごう！
+        上から落ちてくるもみじをクリックしてポイントを稼ごう！
       </p>
       <button
         class="bg-gradient-to-r from-orange-500 to-red-600 text-white px-10 py-4 rounded-2xl text-2xl shadow-lg hover:scale-110 transform transition"
@@ -26,7 +26,7 @@
       </button>
     </div>
 
-    <!-- 落ち葉 -->
+    <!-- もみじ -->
     <div
       v-for="leaf in leaves"
       :key="leaf.id"
@@ -41,7 +41,7 @@
       <img src="<%= asset_path('leaf.png') %>" alt="紅葉" style="width:45px; height:45px; border-radius:50%">
     </div>
 
-    <!-- ポップアニメーション -->
+    <!-- ポップアニメーション(スコア + 10) -->
     <div
       v-for="pop in pops"
       :key="pop.id"
@@ -56,13 +56,13 @@
       +10
     </div>
 
-    <!-- HUD -->
+    <!-- スコアとタイム -->
     <div class="absolute top-2 left-2 bg-white bg-opacity-80 p-2 rounded">
       <div>スコア: {{ score }}</div>
       <div>残り時間: {{ timeLeft }}秒</div>
     </div>
 
-    <!-- クロスヘア -->
+    <!-- 照準(◯) -->
     <div
       v-if="gameStarted"
       class="crosshair pointer-events-none absolute w-8 h-8 border-2 border-yellow-500 rounded-full"
@@ -87,7 +87,7 @@
            最終スコア: <span class="text-yellow-300">{{ score }}</span> 点
         </p>
         <button
-          class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-12 py-4 rounded-2xl text-2xl shadow-xl hover:scale-110 transform transition"
+          class="bg-gradient-to-r from-orange-500 to-red-600 text-white px-12 py-4 rounded-2xl text-2xl shadow-xl hover:scale-110 transform transition"
           @click="startGame"
         >
           もう一回!
@@ -156,7 +156,7 @@
     },
     methods: {
       startGame() {
-        // 初期化
+        // ゲームリセット
         this.gameStarted = true;
         this.gameEnded = false;
         this.score = 0;
@@ -166,21 +166,21 @@
         this.leafIdCounter = 0;
         this.popIdCounter = 0;
 
-        // タイマー（既にあればクリア）
+        // タイマー
         if (this.gameTimer) clearInterval(this.gameTimer);
         this.gameTimer = setInterval(() => {
           this.timeLeft--;
           if (this.timeLeft <= 0) this.endGame();
         }, 1000);
 
-        // 既存の生成器をクリア
+        // 動いてた処理を止める
         if (this.leafGenerator) { clearInterval(this.leafGenerator); this.leafGenerator = null; }
         if (this.animationFrame) { cancelAnimationFrame(this.animationFrame); this.animationFrame = null; }
 
-        // 落ち葉生成（毎回 game-area の幅を参照）
-        const leafSize = 45; // <img> の表示サイズに合わせる
+        // もみじ生成
+        const leafSize = 45;
         this.leafGenerator = setInterval(() => {
-          // game-area を確実に取得
+          // game-area を取得
           const area = document.querySelector('.game-area');
           const width = area && area.clientWidth ? area.clientWidth : window.innerWidth;
           const x = Math.random() * Math.max(0, width - leafSize);
@@ -199,7 +199,7 @@
         this._animateLoop();
       },
 
-      // RAF ループを分離して管理
+      // ゲーム画面の更新
       _animateLoop() {
         const step = () => {
           if (!this.gameStarted) return;
@@ -207,7 +207,7 @@
           const area = document.querySelector('.game-area');
           const height = area && area.clientHeight ? area.clientHeight : window.innerHeight;
 
-          // 落ち葉移動（後方ループで安全に削除）
+          // もみじ移動（後方ループで安全に削除）
           for (let i = this.leaves.length - 1; i >= 0; i--) {
             const leaf = this.leaves[i];
             leaf.y += leaf.speed;
@@ -217,7 +217,7 @@
             }
           }
 
-          // pops 更新
+          // クリック時のアニメーション処理
           for (let i = this.pops.length - 1; i >= 0; i--) {
             const pop = this.pops[i];
             pop.y -= 0.5;
@@ -239,7 +239,7 @@
           this.leaves.splice(index, 1);
           this.score += 10;
 
-          // ポップアニメーション追加
+          // 「+10」の表示を出す準備をする
           this.pops.push({
             id: this.popIdCounter++,
             x: x + 15,
