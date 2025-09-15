@@ -15,5 +15,5 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
 
    # トップページをゲーム開始画面にする
-   root "posts#index"
+   root "games#index"
 end
