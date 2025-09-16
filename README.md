@@ -1,24 +1,25 @@
 # README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+## 概要
+LeafCatchは、上から降ってきる紅葉をクリックしてポイントを稼ぐ秋をテーマにしたゲームアプリです。
 
-Things you may want to cover:
+##  ゲームの遊び方
+1. スタートボタンを押してゲーム開始
+2. 上から降ってくる紅葉をクリック
+3. 制限時間は30秒
+4. 時間終了後に得点が表示されます
 
-* Ruby version
+##  使用技術
+- Ruby
+- Rails
+- Tailwind
+- PostgreSQL
+- Vue.js
 
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+## 工夫した点
+- 背景画像に紅葉のイラストを使用し、秋っぽい雰囲気を演出
+- 紅葉の落下スピードの調整
+- ランダムな位置と速度で紅葉を生成
+- 回転アニメーションを付け、自然な落下を表現
+- 紅葉をクリックすると消え、「+10」のアニメーションが表示
+- スコアと残り時間を左上に表示し、ゲームの進行状況を一目でわかるようにした。
