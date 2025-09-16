@@ -1,4 +1,16 @@
-steps:
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
     - name: Install packages
       run: sudo apt-get update && sudo apt-get install --no-install-recommends -y google-chrome-stable curl libjemalloc2 libvips postgresql-client
 
@@ -15,7 +27,9 @@ steps:
       env:
         RAILS_ENV: test
         DATABASE_URL: postgres://postgres:postgres@localhost:5432
-      run: bin/rails db:prepare
+      run: |
+        bin/rails db:create
+        bin/rails db:migrate
 
     - name: Run tests
       env:
